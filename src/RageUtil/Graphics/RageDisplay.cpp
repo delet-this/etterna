@@ -1219,6 +1219,16 @@ RageDisplay::FrameLimitBeforeVsync()
 		}
 
 		auto estimatedTimeToWait = waitNanoseconds + g_FrameCorrection;
+#ifdef _WIN32
+		constexpr auto busyWaitTime = std::chrono::microseconds(2250); // 2.25 ms
+#else
+		constexpr auto busyWaitTime = std::chrono::microseconds(1500); // 1.5 ms
+#endif
+		const auto sleepTime = estimatedTimeToWait - busyWaitTime;
+		if (sleepTime >= std::chrono::milliseconds(1)) {
+			std::this_thread::sleep_for(sleepTime);
+		}
+
 		auto t = g_LastFrameEndedAt + estimatedTimeToWait;
 		while (t > std::chrono::steady_clock::now()) {
 #if defined(__x86_64__) || defined(_M_X64)
