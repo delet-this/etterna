@@ -24,6 +24,10 @@
 #include "archutils/Win32/GraphicsWindow.h"
 #endif
 
+#if defined(__x86_64__) || defined(_M_X64)
+#include <immintrin.h>
+#endif
+
 // Statistics stuff
 auto g_LastCheckTimer = std::chrono::steady_clock::now();
 int g_iNumVerts;
@@ -1217,7 +1221,17 @@ RageDisplay::FrameLimitBeforeVsync()
 		auto estimatedTimeToWait = waitNanoseconds + g_FrameCorrection;
 		auto t = g_LastFrameEndedAt + estimatedTimeToWait;
 		while (t > std::chrono::steady_clock::now()) {
+#if defined(__x86_64__) || defined(_M_X64)
+			for (int i = 0; i < 25; ++i) {
+				_mm_pause();
+				_mm_pause();
+				_mm_pause();
+				_mm_pause();
+			}
+#else
+#error
 			std::this_thread::yield();
+#endif
 		}
 	} else {
 		// Ignore frame limit preferences if v-sync is enabled without
